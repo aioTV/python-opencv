@@ -1,2 +1,2 @@
 # python-opencv
-Python3 with OpenCV 3
+Python 3 and OpenCV 3 with FFMPEG support
