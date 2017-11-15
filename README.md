@@ -1,2 +1,2 @@
 # python-opencv
-Python 3 and OpenCV 3 with FFMPEG support
+Python 3, OpenCV 3 with FFMPEG support, and Tesseract4
