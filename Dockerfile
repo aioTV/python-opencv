@@ -3,9 +3,39 @@ FROM python:3.6.3-stretch
 RUN apt-get -y update \
   && apt-get -y install autoconf-archive automake g++ libtool pkg-config unzip build-essential cmake \
      libatlas-base-dev gfortran libgtk2.0-dev libavcodec-dev libavformat-dev libswscale-dev libjpeg-dev libpng-dev \
-     libtiff-dev libv4l-dev libleptonica-dev \
- && pip install numpy==1.13.3 \
- && curl -sSL https://github.com/Itseez/opencv/archive/3.3.0.zip -o opencv3.zip \
+     libtiff-dev libv4l-dev libleptonica-dev openjdk-8-jdk  openjdk-8-jre-headless ca-certificates-java \
+     clang-format-3.8 libcurl4-openssl-dev libtool python-dev python-setuptools python-virtualenv \
+     python3-dev python3-setuptools zlib1g-dev \
+  && pip install numpy==1.13.3 wheel \
+  && update-ca-certificates -f
+
+# install tensorflow from sources
+RUN touch WORKSPACE \
+  # install Bazel to build tensorflow
+  && echo "deb http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list \
+  && curl https://storage.googleapis.com/bazel-apt/doc/apt-key.pub.gpg | sudo apt-key add - \
+  && apt-get update \
+  && apt-get install bazel -y \
+  && echo "startup --batch" >>/etc/bazel.bazelrc \
+  && echo "build --spawn_strategy=standalone --genrule_strategy=standalone" >>/etc/bazel.bazelrc
+
+RUN git clone https://github.com/tensorflow/tensorflow.git && \
+  cd tensorflow && \
+  git checkout r1.4
+
+WORKDIR /tensorflow
+
+RUN tensorflow/tools/ci_build/builds/configured CPU \
+ && bazel build -c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.2 --output_filter='^//tensorflow'  //tensorflow/tools/pip_package:build_pip_package \
+ && bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg \
+ && pip install --upgrade /tmp/tensorflow_pkg/tensorflow-*.whl
+
+RUN rm -rf tensorflow
+
+WORKDIR /
+
+# install opencv3.3.0
+RUN curl -sSL https://github.com/Itseez/opencv/archive/3.3.0.zip -o opencv3.zip \
  && unzip -q opencv3.zip && mv /opencv-3.3.0 /opencv && rm opencv3.zip \
  && curl -sSL https://github.com/Itseez/opencv_contrib/archive/3.3.0.zip -o opencv_contrib3.zip \
  && unzip -q opencv_contrib3.zip && mv /opencv_contrib-3.3.0 /opencv_contrib && rm opencv_contrib3.zip \
@@ -24,6 +54,7 @@ RUN apt-get -y update \
  && cd /opencv/build && make -j$(nproc) && make install && ldconfig \
  && rm -rf /opencv /opencv_contrib
 
+# install tesseract4
 RUN cd / \
  && curl -sSL https://github.com/tesseract-ocr/tesseract/archive/ebbfc3ae8df85c351002000a76900e3086375e7b.zip -o tesseract-ocr.zip \
  && unzip tesseract-ocr.zip && rm tesseract-ocr.zip \
@@ -38,8 +69,10 @@ RUN cd / \
  && curl -sSL 'https://github.com/tesseract-ocr/tessdata/blob/master/eng.traineddata?raw=true' \
     -o /usr/local/share/eng.traineddata
 
+# clean up
 RUN apt-get -y remove --purge autoconf-archive automake g++ libtool unzip build-essential cmake pkg-config  \
                               libatlas-base-dev gfortran libgtk2.0-dev libavcodec-dev libavformat-dev libswscale-dev \
-                              libjpeg-dev libpng-dev libtiff-dev libv4l-dev \
+                              libjpeg-dev libpng-dev libtiff-dev libv4l-dev libcurl4-openssl-dev libtool zlib1g-dev\
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
+ 
