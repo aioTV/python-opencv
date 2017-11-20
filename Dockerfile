@@ -3,34 +3,30 @@ FROM python:3.6.3-stretch
 RUN apt-get -y update \
   && apt-get -y install autoconf-archive automake g++ libtool pkg-config unzip build-essential cmake \
      libatlas-base-dev gfortran libgtk2.0-dev libavcodec-dev libavformat-dev libswscale-dev libjpeg-dev libpng-dev \
-     libtiff-dev libv4l-dev libleptonica-dev openjdk-8-jdk  openjdk-8-jre-headless ca-certificates-java \
+     libtiff-dev libv4l-dev libleptonica-dev openjdk-8-jdk openjdk-8-jre-headless ca-certificates-java \
      clang-format-3.8 libcurl4-openssl-dev libtool python-dev python-setuptools python-virtualenv \
      python3-dev python3-setuptools zlib1g-dev \
+  && echo "deb http://storage.googleapis.com/bazel-apt stable jdk1.8" | tee /etc/apt/sources.list.d/bazel.list \
+  && curl https://storage.googleapis.com/bazel-apt/doc/apt-key.pub.gpg | apt-key add - \
+  && apt-get update \
+  && apt-get install bazel -y \
   && pip install numpy==1.13.3 wheel \
   && update-ca-certificates -f
 
 # install tensorflow from sources
-RUN touch WORKSPACE \
-  # install Bazel to build tensorflow
-  && echo "deb http://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list \
-  && curl https://storage.googleapis.com/bazel-apt/doc/apt-key.pub.gpg | sudo apt-key add - \
-  && apt-get update \
-  && apt-get install bazel -y \
-  && echo "startup --batch" >>/etc/bazel.bazelrc \
-  && echo "build --spawn_strategy=standalone --genrule_strategy=standalone" >>/etc/bazel.bazelrc
-
-RUN git clone https://github.com/tensorflow/tensorflow.git && \
-  cd tensorflow && \
-  git checkout r1.4
+RUN curl -sSL https://github.com/tensorflow/tensorflow/archive/r1.4.zip -o tensorflow.zip \
+  && unzip -q tensorflow.zip && mv /tensorflow-r1.4 /tensorflow && rm tensorflow.zip
 
 WORKDIR /tensorflow
 
 RUN tensorflow/tools/ci_build/builds/configured CPU \
- && bazel build -c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.2 --output_filter='^//tensorflow'  //tensorflow/tools/pip_package:build_pip_package \
+ && touch WORKSPACE \
+ && echo "startup --batch\nbuild --spawn_strategy=standalone --genrule_strategy=standalone" >>/etc/bazel.bazelrc \
+ && bazel build -c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.2 \
+    --output_filter='^//tensorflow'  //tensorflow/tools/pip_package:build_pip_package \
  && bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg \
- && pip install --upgrade /tmp/tensorflow_pkg/tensorflow-*.whl
-
-RUN rm -rf tensorflow
+ && pip install --upgrade /tmp/tensorflow_pkg/tensorflow-*.whl \
+ && rm -rf tensorflow
 
 WORKDIR /
 
@@ -75,4 +71,3 @@ RUN apt-get -y remove --purge autoconf-archive automake g++ libtool unzip build-
                               libjpeg-dev libpng-dev libtiff-dev libv4l-dev libcurl4-openssl-dev libtool zlib1g-dev\
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
- 
