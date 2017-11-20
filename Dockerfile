@@ -1,15 +1,13 @@
 FROM python:3.6.3-stretch
 
-RUN apt-get -y update \
+RUN echo "deb http://storage.googleapis.com/bazel-apt stable jdk1.8" | tee /etc/apt/sources.list.d/bazel.list \
+  && curl https://storage.googleapis.com/bazel-apt/doc/apt-key.pub.gpg | apt-key add - \
+  && apt-get -y update \
   && apt-get -y install autoconf-archive automake g++ libtool pkg-config unzip build-essential cmake \
      libatlas-base-dev gfortran libgtk2.0-dev libavcodec-dev libavformat-dev libswscale-dev libjpeg-dev libpng-dev \
      libtiff-dev libv4l-dev libleptonica-dev openjdk-8-jdk openjdk-8-jre-headless ca-certificates-java \
      clang-format-3.8 libcurl4-openssl-dev libtool python-dev python-setuptools python-virtualenv \
-     python3-dev python3-setuptools zlib1g-dev \
-  && echo "deb http://storage.googleapis.com/bazel-apt stable jdk1.8" | tee /etc/apt/sources.list.d/bazel.list \
-  && curl https://storage.googleapis.com/bazel-apt/doc/apt-key.pub.gpg | apt-key add - \
-  && apt-get update \
-  && apt-get install bazel -y \
+     python3-dev python3-setuptools zlib1g-dev bazel\
   && pip install numpy==1.13.3 wheel \
   && update-ca-certificates -f
 
