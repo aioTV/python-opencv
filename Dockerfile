@@ -15,18 +15,15 @@ RUN echo "deb http://storage.googleapis.com/bazel-apt stable jdk1.8" | tee /etc/
 RUN curl -sSL https://github.com/tensorflow/tensorflow/archive/r1.4.zip -o tensorflow.zip \
   && unzip -q tensorflow.zip && mv /tensorflow-r1.4 /tensorflow && rm tensorflow.zip
 
-WORKDIR /tensorflow
-
-RUN tensorflow/tools/ci_build/builds/configured CPU \
+RUN cd tensorflow \
+ && tensorflow/tools/ci_build/builds/configured CPU \
  && touch WORKSPACE \
  && echo "startup --batch\nbuild --spawn_strategy=standalone --genrule_strategy=standalone" >>/etc/bazel.bazelrc \
  && bazel build -c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.2 \
     --output_filter='^//tensorflow'  //tensorflow/tools/pip_package:build_pip_package \
  && bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg \
  && pip install --upgrade /tmp/tensorflow_pkg/tensorflow-*.whl \
- && rm -rf tensorflow
-
-WORKDIR /
+ && cd / && rm -rf tensorflow
 
 # install opencv3.3.0
 RUN curl -sSL https://github.com/Itseez/opencv/archive/3.3.0.zip -o opencv3.zip \
