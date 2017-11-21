@@ -13,7 +13,7 @@ RUN echo "deb http://storage.googleapis.com/bazel-apt stable jdk1.8" | tee /etc/
 
 # install tensorflow from sources
 RUN curl -sSL https://github.com/tensorflow/tensorflow/archive/r1.4.zip -o tensorflow.zip \
- && unzip -q tensorflow.zip && mv /tensorflow-r1.4 /tensorflow && rm tensorflow.zip
+ && unzip -q tensorflow.zip && mv /tensorflow-r1.4 /tensorflow && rm tensorflow.zip \
  && cd tensorflow \
  && tensorflow/tools/ci_build/builds/configured CPU \
  && touch WORKSPACE \
