@@ -60,7 +60,7 @@ RUN cd / \
  && rm -rf tesseract-*/ \
  && curl -sSL 'https://github.com/tesseract-ocr/tessdata/blob/master/eng.traineddata?raw=true' \
     -o /usr/local/share/eng.traineddata \
- && CPPFLAGS=-DUSE_STD_NAMESPACE pip install tesserocr
+ && CPPFLAGS=-DUSE_STD_NAMESPACE pip install tesserocr==2.2.2
 
 # clean up
 RUN apt-get -y remove --purge autoconf-archive automake g++ libtool unzip build-essential cmake pkg-config  \
