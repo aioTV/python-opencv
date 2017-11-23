@@ -1,6 +1,7 @@
 FROM python:3.6.3-stretch
 
 RUN echo "deb http://storage.googleapis.com/bazel-apt stable jdk1.8" | tee /etc/apt/sources.list.d/bazel.list \
+ && echo "deb http://ftp.uk.debian.org/debian experimental main" >> /etc/apt/sources.list \
  && curl https://storage.googleapis.com/bazel-apt/doc/apt-key.pub.gpg | apt-key add - \
  && apt-get -y update \
  && apt-get -y install autoconf-archive automake g++ libtool pkg-config unzip build-essential cmake \
@@ -22,7 +23,7 @@ RUN curl -sSL https://github.com/tensorflow/tensorflow/archive/r1.4.zip -o tenso
     --output_filter='^//tensorflow'  //tensorflow/tools/pip_package:build_pip_package \
  && bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg \
  && pip install --upgrade /tmp/tensorflow_pkg/tensorflow-*.whl \
- && cd / && rm -rf tensorflow
+ && cd / && rm -rf /root/.cache /tmp/tensorflow_pkg tensorflow
 
 # install opencv3.3.0
 RUN curl -sSL https://github.com/Itseez/opencv/archive/3.3.0.zip -o opencv3.zip \
@@ -46,6 +47,7 @@ RUN curl -sSL https://github.com/Itseez/opencv/archive/3.3.0.zip -o opencv3.zip 
 
 # install tesseract4
 RUN cd / \
+ && apt-get install -y -t experimental libtesseract-dev \
  && curl -sSL https://github.com/tesseract-ocr/tesseract/archive/ebbfc3ae8df85c351002000a76900e3086375e7b.zip -o tesseract-ocr.zip \
  && unzip tesseract-ocr.zip && rm tesseract-ocr.zip \
  && cd tesseract-*/ \
@@ -57,7 +59,8 @@ RUN cd / \
  && cd .. \
  && rm -rf tesseract-*/ \
  && curl -sSL 'https://github.com/tesseract-ocr/tessdata/blob/master/eng.traineddata?raw=true' \
-    -o /usr/local/share/eng.traineddata
+    -o /usr/local/share/eng.traineddata \
+ && CPPFLAGS=-DUSE_STD_NAMESPACE pip install tesserocr
 
 # clean up
 RUN apt-get -y remove --purge autoconf-archive automake g++ libtool unzip build-essential cmake pkg-config  \
