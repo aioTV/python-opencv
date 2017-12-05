@@ -58,7 +58,7 @@ RUN cd / \
  && ldconfig \
  && cd .. \
  && rm -rf tesseract-*/ \
- && curl -sSL 'https://github.com/tesseract-ocr/tessdata/blob/master/eng.traineddata?raw=true' \
+ && curl -sSL 'https://github.com/tesseract-ocr/tessdata_fast/blob/master/eng.traineddata?raw=true' \
     -o /usr/local/share/eng.traineddata \
  && CPPFLAGS=-DUSE_STD_NAMESPACE pip install tesserocr==2.2.2
 
